@@ -10,7 +10,8 @@ from settings import AUTH, MOTION_URL
 __author__ = 'magnusknutas'
 
 STATUS_URL = MOTION_URL + '%i/detection/status'
-
+PAUSE_URL = MOTION_URL + '%i/detection/pause'
+START_URL = MOTION_URL + '%i/detection/start'
 
 class CamResource:
     def on_get(self, req, resp):
@@ -29,11 +30,7 @@ class CamResource:
 
             soup = BeautifulSoup(camera_status.content, 'html.parser')
             status = soup.find('body').text.split('status')[1].strip()
-            resp.body = json.dumps({
-                'id': id,
-                'name': soup.find('b').text,
-                'status': status
-            })
+            resp.body = 'ON' if status == 'ACTIVE' else 'OFF'
 
         else:
             if AUTH:
@@ -55,3 +52,43 @@ class CamResource:
                     'link': req.uri + '?id=%i' % int(link.get('href').strip('/'))
                 })
             resp.body = json.dumps(cams)
+
+    def on_post(self, req, resp):
+        id = req.get_param_as_int('id', False)
+        if id:
+            if AUTH:
+                camera_status = requests.get(
+                        STATUS_URL % id,
+                        auth=HTTPBasicAuth(AUTH.get('name'), AUTH.get('pass'))
+                )
+            else:
+                camera_status = requests.get(
+                        STATUS_URL % id,
+                )
+
+            soup = BeautifulSoup(camera_status.content, 'html.parser')
+            sta = soup.find('body').text.split('status')[1].strip()
+            status = True if sta == 'ACTIVE' else False
+
+            if status:
+                if AUTH:
+                    requests.get(
+                            PAUSE_URL % id,
+                            auth=HTTPBasicAuth(AUTH.get('name'), AUTH.get('pass'))
+                    )
+                else:
+                    requests.get(
+                            PAUSE_URL % id
+                    )
+                resp.body = 'OFF'
+            else:
+                if AUTH:
+                    requests.get(
+                            START_URL % id,
+                            auth=HTTPBasicAuth(AUTH.get('name'), AUTH.get('pass'))
+                    )
+                else:
+                    requests.get(
+                            START_URL % id
+                    )
+                resp.body = 'ON'
