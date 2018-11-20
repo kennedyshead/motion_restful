@@ -45,7 +45,8 @@ def callback_when_done(client, message, cam_id):
     while not state_not_set:
         logger.info("Setting state %s for %s", message, cam_id)
         state_not_set = camera.get_state(cam_id) == message or False
-    client.publish('home/camera_recording/%i/set' % cam_id, message)
+    client.publish('home/camera_recording/%i/set' % cam_id, message,
+            retain=True)
 
 
 def on_message(client, userdata, message):
