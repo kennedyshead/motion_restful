@@ -17,7 +17,7 @@ class Cam(object):
         self.start_url = base_url + '%i/detection/start'
         self.pwd = pwd
         self.user = user
-        self.__cams = []
+        self._cams = []
 
     def list_cameras_no_parse(self):
         cameras = self._call(self.base_url)
@@ -30,19 +30,21 @@ class Cam(object):
         return False
 
     def list_cameras(self):
-        if not self.__cams:
+        if not self._cams:
             cameras = self._call(self.base_url)
             soup = BeautifulSoup(cameras.content, 'html.parser')
-            for link in soup.find_all('a'):
-                cam_id = int(link.get('href').strip('/'))
-                logger.info('Adding camera %s-%s', cam_id, link.text)
-                self.__cams.append({
-                    'id': cam_id,
-                    'name': link.text,
-                    'state': 'ON'
-                    if self._state(self.status_url % cam_id) else 'OFF'
-                })
-        return self.__cams
+            all_a = soup.find_all('a')
+            for link in all_a:
+                if link.text.startswith('Camera'):
+                    cam_id = int(link.get('href').strip('/'))
+                    logger.info('Adding camera %s-%s', cam_id, link.text)
+                    self._cams.append({
+                        'id': cam_id,
+                        'name': link.text,
+                        'state': 'ON'
+                        if self._state(self.status_url % cam_id) else 'OFF'
+                    })
+        return self._cams
 
     def get_state(self, cam_id):
         return self.get_camera(cam_id)['state']
@@ -64,10 +66,10 @@ class Cam(object):
     def _call(self, url):
         if self.user:
             return requests.get(
-                    url,
-                    auth=HTTPBasicAuth(self.user, self.pwd)
+                url,
+                auth=HTTPBasicAuth(self.user, self.pwd)
             )
         else:
             return requests.get(
-                    url,
+                url,
             )

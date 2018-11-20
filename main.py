@@ -28,11 +28,16 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    for cam in camera.list_cameras():
+    cameras = camera.list_cameras()
+    for cam in cameras:
         listen = "home/camera_recording/%i" % cam['id']
         client.subscribe(listen, qos=2)
         client.subscribe(listen + '/set')
         logger.info(listen)
+        client.publish(
+            'home/camera_recording/%i/set' % cam['id'], cam['state'],
+            retain=True
+        )
 
 
 def callback_when_done(client, message, cam_id):
@@ -48,7 +53,6 @@ def on_message(client, userdata, message):
         + message.topic + "' with QoS " + str(message.qos))
     if not message.topic.endswith('/set'):
         send = None
-        print(str(message.payload))
         cam_id = int(str(message.topic).lstrip('home/camera_recording/'))
         if message.payload == b'ON':
             send = 'ON'
@@ -72,6 +76,7 @@ def main():
     logger.info('Log level set to %s', args.log_level)
 
     client = Client()
+    client.username_pw_set("knutas", "Freakdays123")
     client.on_connect = on_connect
     client.on_message = on_message
 
