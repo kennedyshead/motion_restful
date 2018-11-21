@@ -77,7 +77,7 @@ def main():
     logger.info('Log level set to %s', args.log_level)
 
     client = Client()
-    client.username_pw_set("knutas", "Freakdays123")
+    client.username_pw_set("****", "****")
     client.on_connect = on_connect
     client.on_message = on_message
 
