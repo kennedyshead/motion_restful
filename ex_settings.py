@@ -8,3 +8,6 @@ AUTH = {
 }
 
 MOTION_URL = ''
+
+MQTT_ADRESS = None
+MQTT_PORT = 1883
